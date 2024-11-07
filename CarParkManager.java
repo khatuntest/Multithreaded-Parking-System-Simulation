@@ -1,10 +1,10 @@
-import java.util.*;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
-// Main class to manage parking operations
-class CarParkManager 
-{
+public class CarParkManager {
     private static final int MAX_SPACES = 4;  // Maximum parking spaces available
     private final Semaphore availableSpaces = new Semaphore(MAX_SPACES, true); // Semaphore to control space access
     private int currentOccupancy = 0;    // Cars currently parked
@@ -21,8 +21,7 @@ class CarParkManager
     }
 
     // Method for a car to attempt parking
-    public boolean attemptParking(Car car)
-    {
+    public boolean attemptParking(Car car) {
         String gateID = car.getGateID();
 
         // Validate that the gate exists in the tracking map
@@ -32,10 +31,8 @@ class CarParkManager
         }
 
         // Try to acquire a parking spot, with a 5-second timeout
-        try
-        {
-            if (availableSpaces.tryAcquire(5, TimeUnit.SECONDS))
-            {
+        try {
+            if (availableSpaces.tryAcquire(5, java.util.concurrent.TimeUnit.SECONDS)) {
                 synchronized (this) { // Synchronize to update shared resources safely
                     currentOccupancy++;       // Increase current occupancy
                     totalCarsProcessed++;     // Increase total cars processed count
@@ -46,9 +43,7 @@ class CarParkManager
                 System.out.printf("Car %d from %s parked. (Status: %d of %d occupied)\n",
                         car.getCarID(), gateID, MAX_SPACES - availableSpaces.availablePermits(), MAX_SPACES);
                 return true;
-            }
-            else
-            {
+            } else {
                 // If no spot was found in time, inform the user
                 System.out.printf("Car %d from %s was unable to park within the time limit.\n", car.getCarID(), gateID);
                 return false;
@@ -60,8 +55,7 @@ class CarParkManager
     }
 
     // Method for a car to leave the parking
-    public void exitParking(Car car)
-    {
+    public void exitParking(Car car) {
         availableSpaces.release(); // Free up a spot in the parking lot
 
         synchronized (this) { // Synchronize access to shared resources
@@ -73,15 +67,16 @@ class CarParkManager
                 car.getCarID(), car.getGateID(), car.getParkingDuration(), MAX_SPACES - availableSpaces.availablePermits(), MAX_SPACES);
     }
 
-    // Method to display the current state and summary
-    public void displayReport() {
-        System.out.println("\nSummary:");
-        System.out.println("Total Cars Processed: " + totalCarsProcessed);
-        System.out.println("Current Occupancy: " + currentOccupancy);
+    // Method to display the current state and summary to a file
+    public void displayReport(PrintStream writer) throws IOException {
+        writer.println("\nSummary:");
+        writer.println("Total Cars Processed: " + totalCarsProcessed);
+        writer.println("Current Occupancy: " + currentOccupancy);
 
-        System.out.println("Cars Served per Gate:");
+        writer.println("Cars Served per Gate:");
         for (Map.Entry<String, Integer> entry : carsByGate.entrySet()) {
-            System.out.printf("- %s handled %d cars.\n", entry.getKey(), entry.getValue());
+            writer.printf("- %s handled %d cars.\n", entry.getKey(), entry.getValue());
         }
     }
 }
+
