@@ -47,8 +47,12 @@ public class CarParkManager {
                         }
 
                         // Confirmation message when a car parks successfully
-                        System.out.printf("Car %d from %s parked. (Status: %d of %d occupied)\n",
-                                car.getCarID(), gateID, MAX_SPACES - availableSpaces.value, MAX_SPACES);
+                        long currentTime = System.currentTimeMillis(), diff = (currentTime - startTime + 999) / 1000; /// +999 for ceiling division
+                        if(diff == 0)
+                            System.out.printf("Car %d from %s parked. (Status: %d of %d occupied)\n",  car.getCarID(), gateID, MAX_SPACES - availableSpaces.value, MAX_SPACES);
+                        else
+                            System.out.printf("Car %d from %s parked after waiting for %d units of time. (Status: %d of %d occupied)\n",  car.getCarID(), gateID, diff, MAX_SPACES - availableSpaces.value, MAX_SPACES);
+                            /// Car 3 from Gate 1 parked after waiting for 1 units of time. (Parking Status: 4 spots occupied)
                         return true;
                     }
                 }
