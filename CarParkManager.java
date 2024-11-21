@@ -34,7 +34,7 @@ public class CarParkManager {
         }
 
         // Try to acquire a parking spot, with a 5-second timeout (simulated)
-        long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis(), printed = 0;
         try {
             while (System.currentTimeMillis() - startTime < 5000) { // 5-second timeout
                 synchronized (availableSpaces) {
@@ -54,6 +54,10 @@ public class CarParkManager {
                             System.out.printf("Car %d from %s parked after waiting for %d units of time. (Status: %d of %d occupied)\n",  car.getCarID(), gateID, diff, MAX_SPACES - availableSpaces.value, MAX_SPACES);
                             /// Car 3 from Gate 1 parked after waiting for 1 units of time. (Parking Status: 4 spots occupied)
                         return true;
+                    }else if(printed == 0){
+                        /// Car 5 from Gate 2 waiting for a spot.
+                        System.out.printf("Car %d from %s waiting for a spot.\n", car.getCarID(), gateID);
+                        printed = 1;
                     }
                 }
                 // Sleep briefly to avoid tight loop while waiting for a parking space
