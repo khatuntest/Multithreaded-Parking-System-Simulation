@@ -57,6 +57,12 @@ public class FCAIScheduler {
         double v2 = getMaxBurstTime(processes) / 10.0;
 
         Queue<Process> readyQueue = new LinkedList<>();
+
+        // Print table header
+        System.out.printf("%-10s %-10s %-15s %-20s %-20s %-10s %-15s %s%n",
+                "Time", "Process", "Executed Time", "Remaining Burst Time",
+                "Updated Quantum", "Priority", "FCAI Factor", "Action - Details");
+
         while (completed < processes.size()) {
             addRemainingProcesses(processes, readyQueue, currentTime, v1, v2);
 
@@ -69,12 +75,11 @@ public class FCAIScheduler {
             currentTime = executeProcess(currentProcess, readyQueue, processes, currentTime, v1, v2);
         }
 
-        // Print results
         System.out.println("\nProcess Execution Completed!");
     }
 
     private static int executeProcess(Process currentProcess, Queue<Process> readyQueue, List<Process> processes, int currentTime, double v1, double v2) {
-        System.out.print(currentTime + " ");
+        int startTime = currentTime;
         int quantum40 = (int) Math.ceil(0.4 * currentProcess.quantum);
         int executedTime = Math.min(quantum40, currentProcess.remainingTime);
 
@@ -87,18 +92,30 @@ public class FCAIScheduler {
         // Check for preemption
         currentProcess.updateFcaiFactor(v1, v2);
         int remainingQuantum = currentProcess.quantum - executedTime;
+        String actionDetails = "";
+
         while (remainingQuantum > 0 && currentProcess.remainingTime > 0) {
             Process mn = currentProcess;
             for (Process process : readyQueue) {
                 process.updateFcaiFactor(v1, v2);
-                if (process.fcaiFactor < mn.fcaiFactor)
+                if (process.fcaiFactor < mn.fcaiFactor) {
                     mn = process;
+                }
             }
-            if(mn != currentProcess){
+            if (mn != currentProcess) {
                 currentProcess.quantum += remainingQuantum;
                 readyQueue.add(currentProcess);
                 readyQueue.remove(mn);
-                System.out.println(currentTime + " " + currentProcess.name);
+
+                // Print execution details before returning
+                actionDetails = String.format("%s preempts %s, runs for %d units, remaining burst = %d.",
+                        mn.name, currentProcess.name, executedTime, currentProcess.remainingTime);
+
+                System.out.printf("%-10s %-10s %-15d %-20d %-20d %-10d %-15.2f %s%n",
+                        startTime + "→" + currentTime, currentProcess.name, executedTime,
+                        currentProcess.remainingTime, currentProcess.quantum,
+                        currentProcess.priority, Math.ceil(currentProcess.fcaiFactor), actionDetails);
+
                 return executeProcess(mn, readyQueue, processes, currentTime, v1, v2);
             }
 
@@ -110,16 +127,30 @@ public class FCAIScheduler {
 
             addRemainingProcesses(processes, readyQueue, currentTime, v1, v2);
 
-            if(currentProcess.remainingTime == 0)  break;
+            if (currentProcess.remainingTime == 0) break;
         }
-        System.out.println(currentTime + " " + currentProcess.name);
+
+        // Log action details after process execution
         if (currentProcess.remainingTime > 0) {
             currentProcess.quantum += 2;
             readyQueue.add(currentProcess);
+            actionDetails = String.format("%s runs for %d units, remaining burst = %d.",
+                    currentProcess.name, executedTime, currentProcess.remainingTime);
+
+            System.out.printf("%-10s %-10s %-15d %-20d %-20d %-10d %-15.2f %s%n",
+                    startTime + "→" + currentTime, currentProcess.name, executedTime,
+                    currentProcess.remainingTime, currentProcess.quantum,
+                    currentProcess.priority, currentProcess.fcaiFactor, actionDetails);
         } else {
-            System.out.println(currentProcess.name + " Completed!");
             completed++;
+            actionDetails = String.format("%s completes execution.", currentProcess.name);
+
+            System.out.printf("%-10s %-10s %-15d %-20d %-20s %-10d %-15.2f %s%n",
+                    startTime + "→" + currentTime, currentProcess.name, executedTime,
+                    0, "Completed",
+                    currentProcess.priority, Math.ceil(currentProcess.fcaiFactor), actionDetails);
         }
+
         return currentTime;
     }
 
